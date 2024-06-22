@@ -57,13 +57,17 @@ const App = () => {
       const plotData = selectedRuns.map((run, index) => {
         const runIndex = runs.indexOf(run);
         const data = dataFiles[runIndex];
+
+        const metricKey = selectedMetric === 'Cluster Utilization' ? 'free_gpus' : 'jobs_running';
         const totalGpus = data["0"].free_gpus; // Assuming the total GPUs is the free_gpus at time 0
 
         const runData = Object.keys(data)
           .filter((_, i) => i % samplingInterval === 0)
           .map((time) => ({
             x: parseInt(time, 10),
-            y: totalGpus - data[time].free_gpus,
+            y: selectedMetric === 'Cluster Utilization' 
+               ? totalGpus - data[time].free_gpus 
+               : data[time].jobs_running,
           })).sort((a, b) => a.x - b.x); // Sort data by time
 
         return {
@@ -97,7 +101,7 @@ const App = () => {
       y: {
         title: {
           display: true,
-          text: 'Cluster Utilization',
+          text: selectedMetric,
         },
       },
     },
@@ -110,6 +114,7 @@ const App = () => {
         Select Metric:
         <select value={selectedMetric} onChange={handleMetricChange}>
           <option value="Cluster Utilization">Cluster Utilization</option>
+          <option value="Number of Running Jobs">Number of Running Jobs</option>
         </select>
       </label>
       <div>
