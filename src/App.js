@@ -1,17 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Line } from 'react-chartjs-2';
 import { Chart, registerables } from 'chart.js';
-import data from './data/v100_tiresias_4_8_prefer_split_300_first-gpu_1000_2000_Las_load_8.0_cluster_stats.json'; // Adjust this path as necessary
 
 Chart.register(...registerables);
+
+// Import all JSON files from the data folder
+const importAll = (r) => r.keys().map(r);
+const dataFiles = importAll(require.context('./data', false, /\.json$/));
 
 const App = () => {
   const [selectedMetric, setSelectedMetric] = useState('Cluster Utilization');
   const [selectedRuns, setSelectedRuns] = useState([]);
   const [chartData, setChartData] = useState(null);
   const [samplingInterval, setSamplingInterval] = useState(10); // Default sampling interval
+  const [runs, setRuns] = useState([]);
 
-  const runs = ['Run 1'];
+  useEffect(() => {
+    // Generate run labels based on the imported files
+    const generatedRuns = dataFiles.map((_, index) => `Run ${index + 1}`);
+    setRuns(generatedRuns);
+  }, []);
 
   const handleMetricChange = (event) => {
     setSelectedMetric(event.target.value);
@@ -31,14 +39,25 @@ const App = () => {
     setSamplingInterval(parseInt(event.target.value, 10));
   };
 
+  const predefinedColors = [
+    'rgba(255, 99, 132, 1)',
+    'rgba(54, 162, 235, 1)',
+    'rgba(255, 206, 86, 1)',
+    'rgba(75, 192, 192, 1)',
+    'rgba(153, 102, 255, 1)',
+    'rgba(255, 159, 64, 1)',
+    'rgba(199, 199, 199, 1)',
+    'rgba(83, 102, 255, 1)',
+    'rgba(255, 182, 193, 1)',
+    'rgba(144, 238, 144, 1)',
+  ];
+
   const handlePlotClick = () => {
     try {
-      const totalGpus = data["0"].free_gpus; // Assuming the total GPUs is the free_gpus at time 0
-
       const plotData = selectedRuns.map((run, index) => {
-        if (run !== 'Run 1') {
-          throw new Error(`Data for ${run} is not available`);
-        }
+        const runIndex = runs.indexOf(run);
+        const data = dataFiles[runIndex];
+        const totalGpus = data["0"].free_gpus; // Assuming the total GPUs is the free_gpus at time 0
 
         const runData = Object.keys(data)
           .filter((_, i) => i % samplingInterval === 0)
@@ -50,8 +69,8 @@ const App = () => {
         return {
           label: run,
           data: runData,
-          borderColor: `rgba(${index * 50}, 99, 132, 1)`,
-          backgroundColor: `rgba(${index * 50}, 99, 132, 0.2)`,
+          borderColor: predefinedColors[index % predefinedColors.length],
+          backgroundColor: predefinedColors[index % predefinedColors.length].replace('1)', '0.2)'),
           fill: false,
         };
       });
