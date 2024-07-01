@@ -5,7 +5,7 @@ import { Chart, registerables } from 'chart.js';
 
 Chart.register(...registerables);
 
-const importAll = (r) => r.keys().map(r);
+const importAll = (r) => r.keys().map((file) => file.replace('./', ''));
 const dataFiles = importAll(require.context('./data', false, /\.json$/));
 
 const PerRoundMetrics = () => {
@@ -48,7 +48,7 @@ const PerRoundMetrics = () => {
   const handlePlotClick = () => {
     try {
       const plotData = selectedFiles.map((file, index) => {
-        const data = require(`./data/${file.replace('./', '')}`);
+        const data = require(`./data/${file}`);
 
         const metricKey = selectedMetric === 'Cluster Utilization' ? 'free_gpus' : 'jobs_running';
         const totalGpus = data["0"].free_gpus;
@@ -63,7 +63,7 @@ const PerRoundMetrics = () => {
           })).sort((a, b) => a.x - b.x);
 
         return {
-          label: file.replace('./', '').replace('.json', ''),
+          label: file.replace('.json', ''),
           data: runData,
           borderColor: predefinedColors[index % predefinedColors.length],
           backgroundColor: predefinedColors[index % predefinedColors.length].replace('1)', '0.2)'),
@@ -116,14 +116,14 @@ const PerRoundMetrics = () => {
         {dataFiles.map((file, index) => (
           <button
             key={index}
-            onClick={() => handleFileClick(file.replace('./', ''))}
+            onClick={() => handleFileClick(file)}
             style={{
-              backgroundColor: selectedFiles.includes(file.replace('./', '')) ? 'blue' : 'grey',
+              backgroundColor: selectedFiles.includes(file) ? 'blue' : 'grey',
               color: 'white',
               margin: '5px',
             }}
           >
-            {file.replace('./', '').replace('.json', '')}
+            {file.replace('.json', '')}
           </button>
         ))}
       </div>
