@@ -23,17 +23,21 @@ const GlobalMetrics = () => {
       let maxEndTime = 0;
       dataFiles.forEach((file) => {
         const data = require(`./global/${file}`);
-        const times = Object.keys(data).map((time) => parseInt(time, 10));
-        const fileMaxTime = Math.max(...times);
-        if (fileMaxTime > maxEndTime) {
-          maxEndTime = fileMaxTime;
-        }
+        
+        // Loop through each job in the file and extract the end time (second value of each array)
+        Object.values(data).forEach((values) => {
+          const jobEndTime = values[1];  // Second value is the end time
+          if (jobEndTime > maxEndTime) {
+            maxEndTime = jobEndTime;
+          }
+        });
       });
       setEndTime(maxEndTime);
     };
-
+  
     findMaxEndTime();
   }, []);
+  
 
   const handleMetricChange = (event) => {
     setSelectedMetric(event.target.value);
@@ -67,27 +71,28 @@ const GlobalMetrics = () => {
         const data = require(`./global/${file}`);
         let totalResponsiveness = 0;
         let count = 0;
-
-        Object.values(data).forEach((values) => {
-          if (values.length === 2) {
-            const responsiveness = values[1] - values[0];
+  
+        Object.entries(data).forEach(([jobId, values]) => {
+          const jobStartTime = values[0]; // First value is the start time
+          const jobEndTime = values[1]; // Second value is the end time (responsiveness calculation)
+  
+          // Check if the job's start time falls within the user-specified range
+          if ((startTime === 0 || jobStartTime >= startTime) && (endTime === 0 || jobStartTime <= endTime)) {
+            const responsiveness = jobEndTime - jobStartTime;
             totalResponsiveness += responsiveness;
             count += 1;
           }
         });
-
+  
         const averageResponsiveness = count > 0 ? totalResponsiveness / count : 0;
-        // console.log(file);
-        // console.log(totalResponsiveness);
-        // console.log(count);
-
+  
         return {
           label: file.replace('.json', ''),
           data: [averageResponsiveness],
           backgroundColor: predefinedColors[index % predefinedColors.length],
         };
       });
-
+  
       setChartData({
         labels: selectedFiles.map(file => file.replace('.json', '')),
         datasets: [{
@@ -101,6 +106,7 @@ const GlobalMetrics = () => {
       alert('Error plotting data. Check console for details.');
     }
   };
+  
 
   const predefinedColors = [
     'rgba(255, 99, 132, 1)',
