@@ -13,6 +13,26 @@ const PerRoundMetrics = () => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [chartData, setChartData] = useState(null);
   const [samplingInterval, setSamplingInterval] = useState(10);
+  const [startTime, setStartTime] = useState(0);
+  const [endTime, setEndTime] = useState(0);
+
+  useEffect(() => {
+    // Find the largest time value from all files
+    const findMaxEndTime = () => {
+      let maxEndTime = 0;
+      dataFiles.forEach((file) => {
+        const data = require(`./data/${file}`);
+        const times = Object.keys(data).map((time) => parseInt(time, 10));
+        const fileMaxTime = Math.max(...times);
+        if (fileMaxTime > maxEndTime) {
+          maxEndTime = fileMaxTime;
+        }
+      });
+      setEndTime(maxEndTime);
+    };
+
+    findMaxEndTime();
+  }, []);
 
   const handleMetricChange = (event) => {
     setSelectedMetric(event.target.value);
@@ -30,6 +50,14 @@ const PerRoundMetrics = () => {
 
   const handleSamplingIntervalChange = (event) => {
     setSamplingInterval(parseInt(event.target.value, 10));
+  };
+
+  const handleStartTimeChange = (event) => {
+    setStartTime(parseInt(event.target.value, 10));
+  };
+
+  const handleEndTimeChange = (event) => {
+    setEndTime(parseInt(event.target.value, 10));
   };
 
   const predefinedColors = [
@@ -54,7 +82,7 @@ const PerRoundMetrics = () => {
         const totalGpus = data["0"].free_gpus;
 
         const runData = Object.keys(data)
-          .filter((_, i) => i % samplingInterval === 0)
+          .filter((time, i) => i % samplingInterval === 0 && parseInt(time, 10) >= startTime && parseInt(time, 10) <= endTime)
           .map((time) => ({
             x: parseInt(time, 10),
             y: selectedMetric === 'Cluster Utilization' 
@@ -134,6 +162,24 @@ const PerRoundMetrics = () => {
           value={samplingInterval} 
           onChange={handleSamplingIntervalChange} 
           min="1" 
+        />
+      </label>
+      <label>
+        Start Time:
+        <input 
+          type="number" 
+          value={startTime} 
+          onChange={handleStartTimeChange} 
+          min="0" 
+        />
+      </label>
+      <label>
+        End Time:
+        <input 
+          type="number" 
+          value={endTime} 
+          onChange={handleEndTimeChange} 
+          min="0" 
         />
       </label>
       <button onClick={handlePlotClick}>Plot</button>
